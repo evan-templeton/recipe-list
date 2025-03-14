@@ -9,25 +9,33 @@ import XCTest
 @testable import RecipeList
 
 @MainActor
-class RecipeViewModelTests: XCTestCase {
+final class RecipeViewModelTests: XCTestCase {
+    
+    private var service: RecipeServiceMock!
+    private var viewModel: RecipeViewModel<RecipeServiceMock>!
+    
+    override func setUp() {
+        service = RecipeServiceMock()
+        viewModel = RecipeViewModel(recipeService: service)
+    }
+    
     func testFetchRecipesSuccess() async {
-        let mockService = MockRecipeService()
-        let viewModel = RecipeViewModel(recipeService: mockService)
-        
         await viewModel.fetchRecipes()
-        
-        XCTAssertEqual(viewModel.recipes.count, 2)
-        XCTAssertNil(viewModel.errorMessage)
+        if case .loaded(let recipes) = viewModel.fetchRecipesState {
+            XCTAssertEqual(recipes.count, 2)
+        } else {
+            XCTFail("Expected loaded state with recipes")
+        }
     }
     
     func testFetchRecipesFailure() async {
-        let mockService = MockRecipeService()
-        mockService.shouldThrowError = true
-        let viewModel = RecipeViewModel(recipeService: mockService)
-        
+        service.shouldThrowError = true
+        viewModel = RecipeViewModel(recipeService: service)
         await viewModel.fetchRecipes()
-        
-        XCTAssertEqual(viewModel.recipes.count, 0)
-        XCTAssertEqual(viewModel.errorMessage, "Failed to load recipes")
+        if case .error(let message) = viewModel.fetchRecipesState {
+            XCTAssertTrue(message.contains("Failed to load recipes"))
+        } else {
+            XCTFail("Expected error state")
+        }
     }
 }

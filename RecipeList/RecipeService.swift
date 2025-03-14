@@ -11,20 +11,20 @@ protocol RecipeServiceProtocol {
     func fetchRecipes() async throws -> [Recipe]
 }
 
-private struct RecipesResponse: Decodable {
-    let recipes: [Recipe]
-}
-
 struct RecipeService: RecipeServiceProtocol {
+    
+    private let recipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes.json"
+    private let malformedUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-malformed.json"
+    private let emptyRecipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-empty.json"
+    
     func fetchRecipes() async throws -> [Recipe] {
-        guard let url = URL(string: "https://d3jbb8n5wk0qxi.cloudfront.net/recipes.json") else {
+        guard let url = URL(string: recipesUrlString) else {
             throw RecipeServiceError.invalidURL
         }
         
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             do {
-                print(String(decoding: data, as: UTF8.self))
                 let response = try JSONDecoder().decode(RecipesResponse.self, from: data)
                 return response.recipes
             } catch {
@@ -42,7 +42,7 @@ enum RecipeServiceError: Error {
     case decodingError(Error)
 }
 
-class MockRecipeService: RecipeServiceProtocol {
+struct RecipeServiceMock: RecipeServiceProtocol {
     var shouldThrowError = false
     
     func fetchRecipes() async throws -> [Recipe] {

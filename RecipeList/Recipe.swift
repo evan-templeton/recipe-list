@@ -20,3 +20,17 @@ struct Recipe: Identifiable, Decodable {
         case id = "uuid"
     }
 }
+
+struct RecipesResponse: Decodable {
+    let recipes: [Recipe]
+    
+    enum CodingKeys: String, CodingKey {
+        case recipes
+    }
+    
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let values = try container.decode([FailableDecodable<Recipe>].self, forKey: .recipes)
+        recipes = values.compactMap(\.base)
+    }
+}

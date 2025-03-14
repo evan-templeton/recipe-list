@@ -14,12 +14,15 @@ struct AsyncImageView: View {
     var body: some View {
         Group {
             if let image {
-                Image(uiImage: image).resizable().scaledToFit()
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
             } else {
-                ProgressView().task {
-                    await loadImage()
-                }
+                ProgressView()
             }
+        }
+        .task {
+            await loadImage()
         }
     }
     
