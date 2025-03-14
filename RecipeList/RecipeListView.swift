@@ -16,7 +16,7 @@ struct RecipeListView<Service: RecipeServiceProtocol>: View {
     @StateObject private var viewModel: RecipeViewModel<Service>
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             switch viewModel.fetchRecipesState {
                 case .loading: ProgressView()
                 case .loaded(let recipes): listView(recipes: recipes)

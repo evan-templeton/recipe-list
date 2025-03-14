@@ -18,7 +18,7 @@ struct RecipeService: RecipeServiceProtocol {
     private let emptyRecipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-empty.json"
     
     func fetchRecipes() async throws -> [Recipe] {
-        guard let url = URL(string: recipesUrlString) else {
+        guard let url = URL(string: malformedUrlString) else {
             throw RecipeServiceError.invalidURL
         }
         
@@ -50,8 +50,18 @@ struct RecipeServiceMock: RecipeServiceProtocol {
             throw URLError(.badServerResponse)
         }
         return [
-            Recipe(id: UUID(), cuisine: "Italian", name: "Spaghetti", image: "https://example.com/spaghetti.jpg"),
-            Recipe(id: UUID(), cuisine: "Japanese", name: "Sushi", image: "https://example.com/sushi.jpg")
+            Recipe(
+                id: UUID(),
+                cuisine: "Italian",
+                name: "Spaghetti",
+                image: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/b75ee8ef-a290-4062-8b26-60722d75d09c/small.jpg"
+            ),
+            Recipe(
+                id: UUID(),
+                cuisine: "Japanese",
+                name: "Sushi",
+                image: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/658442fe-e3d3-44a5-9081-e2424fb0129d/small.jpg"
+            )
         ]
     }
 }
