@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import class UIKit.UIImage
 
 @MainActor
 final class RecipeViewModel<Service: RecipeServiceProtocol>: ObservableObject {
     
     @Published var fetchRecipesState: FetchRecipesState = .loading
+    private let cache = NSCache<NSURL, UIImage>()
     
     private let recipeService: Service
     
@@ -20,7 +22,22 @@ final class RecipeViewModel<Service: RecipeServiceProtocol>: ObservableObject {
     
     func fetchRecipes() async {
         do {
-            let recipes = try await recipeService.fetchRecipes()
+            let recipeResponses = try await recipeService.fetchRecipes()
+            let recipes = await withTaskGroup(of: RecipeModel?.self) { group in
+                for recipeResponse in recipeResponses {
+                    group.addTask {
+                        await self.createRecipeModel(from: recipeResponse)
+                    }
+                }
+                
+                var processedRecipes = [RecipeModel]()
+                for await recipeModel in group {
+                    if let recipeModel = recipeModel {
+                        processedRecipes.append(recipeModel)
+                    }
+                }
+                return processedRecipes
+            }
             fetchRecipesState = .loaded(recipes)
         } catch {
             let errorMessage = "Failed to load recipes: \(error)"
@@ -32,7 +49,7 @@ final class RecipeViewModel<Service: RecipeServiceProtocol>: ObservableObject {
 extension RecipeViewModel {
     enum FetchRecipesState {
         case loading
-        case loaded([Recipe])
+        case loaded([RecipeModel])
         case error(String)
     }
 }

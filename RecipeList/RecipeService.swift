@@ -6,9 +6,17 @@
 //
 
 import Foundation
+import class UIKit.UIImage
 
 protocol RecipeServiceProtocol {
-    func fetchRecipes() async throws -> [Recipe]
+    func fetchRecipes() async throws -> [RecipeModel]
+}
+
+struct RecipeModel {
+    let id: UUID
+    let name: String
+    let cuisine: String
+    let image: UIImage
 }
 
 struct RecipeService: RecipeServiceProtocol {
@@ -17,7 +25,7 @@ struct RecipeService: RecipeServiceProtocol {
     private let malformedUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-malformed.json"
     private let emptyRecipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-empty.json"
     
-    func fetchRecipes() async throws -> [Recipe] {
+    func fetchRecipes() async throws -> [RecipeModel] {
         guard let url = URL(string: malformedUrlString) else {
             throw RecipeServiceError.invalidURL
         }
@@ -25,7 +33,7 @@ struct RecipeService: RecipeServiceProtocol {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             do {
-                let response = try JSONDecoder().decode(RecipesResponse.self, from: data)
+                let response = try JSONDecoder().decode(RecipesAPIResponse.self, from: data)
                 return response.recipes
             } catch {
                 throw RecipeServiceError.decodingError(error)
@@ -33,6 +41,24 @@ struct RecipeService: RecipeServiceProtocol {
         } catch {
             throw RecipeServiceError.networkError(error)
         }
+    }
+    
+    private func createRecipeModel(from response: RecipeResponse) async -> RecipeModel? {
+        if let cachedImage = cache.object(forKey: response.imageUrl as NSURL) {
+            return RecipeModel(id: response.id, name: response.name, cuisine: response.cuisine, image: cachedImage)
+        }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: response.imageUrl)
+            if let uiImage = UIImage(data: data) {
+                cache.setObject(uiImage, forKey: response.imageUrl as NSURL)
+                return RecipeModel(id: response.id, name: response.name, cuisine: response.cuisine, image: uiImage)
+            }
+        } catch {
+            print("Failed to load image: \(error)")
+        }
+        
+        return nil
     }
 }
 
@@ -45,23 +71,25 @@ enum RecipeServiceError: Error {
 struct RecipeServiceMock: RecipeServiceProtocol {
     var shouldThrowError = false
     
-    func fetchRecipes() async throws -> [Recipe] {
+    private static let mockResponse = [
+        RecipeResponse(
+            id: UUID(),
+            cuisine: "Italian",
+            name: "Spaghetti",
+            imageUrl: URL(string: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/b75ee8ef-a290-4062-8b26-60722d75d09c/small.jpg")!
+        ),
+        RecipeResponse(
+            id: UUID(),
+            cuisine: "Japanese",
+            name: "Sushi",
+            imageUrl: URL(string: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/658442fe-e3d3-44a5-9081-e2424fb0129d/small.jpg")!
+        )
+    ]
+    
+    func fetchRecipes() async throws -> [RecipeModel] {
         if shouldThrowError {
             throw URLError(.badServerResponse)
         }
-        return [
-            Recipe(
-                id: UUID(),
-                cuisine: "Italian",
-                name: "Spaghetti",
-                image: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/b75ee8ef-a290-4062-8b26-60722d75d09c/small.jpg"
-            ),
-            Recipe(
-                id: UUID(),
-                cuisine: "Japanese",
-                name: "Sushi",
-                image: "https://d3jbb8n5wk0qxi.cloudfront.net/photos/658442fe-e3d3-44a5-9081-e2424fb0129d/small.jpg"
-            )
-        ]
+        return
     }
 }

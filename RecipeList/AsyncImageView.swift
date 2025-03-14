@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AsyncImageView: View {
     let url: String
-    @State private var image: UIImage? = nil
+    @State private var image: UIImage?
     
     var body: some View {
         Group {

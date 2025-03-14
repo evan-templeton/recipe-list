@@ -35,7 +35,7 @@ struct RecipeListView<Service: RecipeServiceProtocol>: View {
             } else {
                 List(recipes) { recipe in
                     HStack {
-                        AsyncImageView(url: recipe.image)
+                        Image(uiImage: <#T##UIImage#>)
                             .frame(width: 50, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         VStack(alignment: .leading) {
