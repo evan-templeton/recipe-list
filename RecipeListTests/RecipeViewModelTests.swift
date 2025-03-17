@@ -38,4 +38,13 @@ final class RecipeViewModelTests: XCTestCase {
             XCTFail("Expected error state")
         }
     }
+    
+//    func testImageCaching() {
+//        let url = URL(string: "https://example.com/test.jpg")!
+//        let image = UIImage(systemName: "star")!
+//        ImageCache.shared.set(url, image: image)
+//        let cachedImage = ImageCache.shared.get(url)
+//        XCTAssertNotNil(cachedImage)
+//        XCTAssertEqual(cachedImage, image)
+//    }
 }

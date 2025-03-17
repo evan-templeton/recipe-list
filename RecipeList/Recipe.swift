@@ -7,22 +7,22 @@
 
 import Foundation
 
-struct Recipe: Identifiable, Decodable {
+struct RecipeResponse: Identifiable, Decodable {
     let id: UUID
     let cuisine: String
     let name: String
-    let image: String
+    let imageUrl: URL
     
     enum CodingKeys: String, CodingKey {
+        case id = "uuid"
         case cuisine
         case name
-        case image = "photo_url_small"
-        case id = "uuid"
+        case imageUrl = "photo_url_small"
     }
 }
 
-struct RecipesResponse: Decodable {
-    let recipes: [Recipe]
+struct RecipesAPIResponse: Decodable {
+    let recipes: [RecipeResponse]
     
     enum CodingKeys: String, CodingKey {
         case recipes
@@ -30,7 +30,7 @@ struct RecipesResponse: Decodable {
     
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let values = try container.decode([FailableDecodable<Recipe>].self, forKey: .recipes)
+        let values = try container.decode([FailableDecodable<RecipeResponse>].self, forKey: .recipes)
         recipes = values.compactMap(\.base)
     }
 }

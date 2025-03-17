@@ -28,14 +28,14 @@ struct RecipeListView<Service: RecipeServiceProtocol>: View {
         }
     }
     
-    private func listView(recipes: [Recipe]) -> some View {
+    private func listView(recipes: [RecipeModel]) -> some View {
         Group {
             if recipes.isEmpty {
                 errorView()
             } else {
                 List(recipes) { recipe in
                     HStack {
-                        AsyncImageView(url: recipe.image)
+                        Image(uiImage: recipe.image)
                             .frame(width: 50, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         VStack(alignment: .leading) {
