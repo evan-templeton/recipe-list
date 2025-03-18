@@ -12,109 +12,83 @@ protocol RecipeServiceProtocol {
     func fetchRecipes() async throws -> [RecipeModel]
 }
 
-struct RecipeModel: Identifiable {
-    let id: UUID
-    let name: String
-    let cuisine: String
-    let image: UIImage
-}
-
 struct RecipeService: RecipeServiceProtocol {
     
     private let recipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes.json"
     private let malformedUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-malformed.json"
     private let emptyRecipesUrlString = "https://d3jbb8n5wk0qxi.cloudfront.net/recipes-empty.json"
     
-    private let cache = NSCache<NSURL, UIImage>()
+    private let cache: NSCache<NSURL, UIImage>
+    private let session: URLSession
+    
+    init(cache: NSCache<NSURL, UIImage> = NSCache(), session: URLSession = .shared) {
+        self.cache = cache
+        self.session = session
+    }
     
     func fetchRecipes() async throws -> [RecipeModel] {
         guard let url = URL(string: recipesUrlString) else {
             throw RecipeServiceError.invalidURL
         }
         
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            do {
-                let response = try JSONDecoder().decode(RecipesAPIResponse.self, from: data)
-                
-                return await withTaskGroup(of: RecipeModel?.self) { group in
-                    for recipe in response.recipes {
-                        group.addTask {
-                            await self.createRecipeModel(from: recipe)
-                        }
+        let (data, _) = try await session.data(from: url)
+        let response = try JSONDecoder().decode(RecipesAPIResponse.self, from: data)
+        let models = try await createRecipeModels(response: response)
+        return models.sorted { $0.name < $1.name }
+    }
+    
+    private func createRecipeModels(response: RecipesAPIResponse) async throws -> [RecipeModel] {
+        try await withThrowingTaskGroup(of: RecipeModel?.self) { group in
+            for recipe in response.recipes {
+                if let cachedImage = cache.object(forKey: recipe.imageUrl as NSURL) {
+                    group.addTask {
+                        RecipeModel(id: recipe.id, name: recipe.name, cuisine: recipe.cuisine, image: cachedImage)
                     }
-                    
-                    var recipes = [RecipeModel]()
-                    for await recipeModel in group {
-                        if let recipeModel = recipeModel {
-                            recipes.append(recipeModel)
-                        }
+                } else {
+                    group.addTask {
+                        try await self.createRecipeModel(from: recipe)
                     }
-                    return recipes
                 }
-            } catch {
-                throw RecipeServiceError.decodingError(error)
             }
-        } catch {
-            throw RecipeServiceError.networkError(error)
+            
+            return try await group.reduce(into: [RecipeModel]()) { result, recipeModel in
+                if let recipeModel {
+                    result.append(recipeModel)
+                }
+            }
         }
     }
     
-//    func fetchRecipes() async throws -> [RecipeModel] {
-//        guard let url = URL(string: malformedUrlString) else {
-//            throw RecipeServiceError.invalidURL
-//        }
-//        
-//        do {
-//            let (data, _) = try await URLSession.shared.data(from: url)
-//            do {
-//                let response = try JSONDecoder().decode(RecipesAPIResponse.self, from: data)
-//                return response.recipes
-//            } catch {
-//                throw RecipeServiceError.decodingError(error)
-//            }
-//        } catch {
-//            throw RecipeServiceError.networkError(error)
-//        }
-//    }
-    
-    private func createRecipeModel(from response: RecipeResponse) async -> RecipeModel? {
-        if let cachedImage = cache.object(forKey: response.imageUrl as NSURL) {
-            return RecipeModel(id: response.id, name: response.name, cuisine: response.cuisine, image: cachedImage)
+    private func createRecipeModel(from response: RecipeResponse) async throws -> RecipeModel {
+        let (data, _) = try await session.data(from: response.imageUrl)
+        guard let image = UIImage(data: data) else {
+            throw RecipeServiceError.decodingError(#function)
         }
         
-        do {
-            let (data, _) = try await URLSession.shared.data(from: response.imageUrl)
-            if let uiImage = UIImage(data: data) {
-                cache.setObject(uiImage, forKey: response.imageUrl as NSURL)
-                return RecipeModel(id: response.id, name: response.name, cuisine: response.cuisine, image: uiImage)
-            }
-        } catch {
-            print("Failed to load image: \(error)")
-        }
-        
-        return nil
+        cache.setObject(image, forKey: response.imageUrl as NSURL)
+        return RecipeModel(id: response.id, name: response.name, cuisine: response.cuisine, image: image)
     }
 }
 
 enum RecipeServiceError: Error {
     case invalidURL
-    case networkError(Error)
-    case decodingError(Error)
+    case decodingError(String)
+    
+    var localizedDescription: String {
+        return switch self {
+            case .invalidURL: "Invalid URL"
+            case .decodingError(let error): "Decoding error: \(error)"
+        }
+    }
 }
 
 struct RecipeServiceMock: RecipeServiceProtocol {
     var shouldThrowError = false
     
-    private let mockRecipes = [
-        RecipeModel(id: UUID(), name: "Spaghetti", cuisine: "Italian", image: UIImage(systemName: "fork.knife")!),
-        RecipeModel(id: UUID(), name: "Sushi", cuisine: "Japanese", image: UIImage(systemName: "fish")!)
-    ]
-    
     func fetchRecipes() async throws -> [RecipeModel] {
         if shouldThrowError {
             throw URLError(.badServerResponse)
         }
-        return mockRecipes
+        return RecipeModel.mocks
     }
 }

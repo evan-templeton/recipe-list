@@ -12,17 +12,17 @@ import XCTest
 final class RecipeViewModelTests: XCTestCase {
     
     private var service: RecipeServiceMock!
-    private var viewModel: RecipeViewModel<RecipeServiceMock>!
+    private var viewModel: RecipeListViewModel<RecipeServiceMock>!
     
     override func setUp() {
         service = RecipeServiceMock()
-        viewModel = RecipeViewModel(recipeService: service)
+        viewModel = RecipeListViewModel(recipeService: service)
     }
     
     func testFetchRecipesSuccess() async {
         await viewModel.fetchRecipes()
         if case .loaded(let recipes) = viewModel.fetchRecipesState {
-            XCTAssertEqual(recipes.count, 2)
+            XCTAssertEqual(recipes.count, RecipeModel.mocks.count)
         } else {
             XCTFail("Expected loaded state with recipes")
         }
@@ -30,7 +30,7 @@ final class RecipeViewModelTests: XCTestCase {
     
     func testFetchRecipesFailure() async {
         service.shouldThrowError = true
-        viewModel = RecipeViewModel(recipeService: service)
+        viewModel = RecipeListViewModel(recipeService: service)
         await viewModel.fetchRecipes()
         if case .error(let message) = viewModel.fetchRecipesState {
             XCTAssertTrue(message.contains("Failed to load recipes"))
@@ -38,13 +38,4 @@ final class RecipeViewModelTests: XCTestCase {
             XCTFail("Expected error state")
         }
     }
-    
-//    func testImageCaching() {
-//        let url = URL(string: "https://example.com/test.jpg")!
-//        let image = UIImage(systemName: "star")!
-//        ImageCache.shared.set(url, image: image)
-//        let cachedImage = ImageCache.shared.get(url)
-//        XCTAssertNotNil(cachedImage)
-//        XCTAssertEqual(cachedImage, image)
-//    }
 }

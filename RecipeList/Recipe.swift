@@ -6,8 +6,23 @@
 //
 
 import Foundation
+import class UIKit.UIImage
 
-struct RecipeResponse: Identifiable, Decodable {
+struct RecipeModel: Identifiable {
+    let id: UUID
+    let name: String
+    let cuisine: String
+    let image: UIImage
+}
+
+extension RecipeModel {
+    static let mocks = [
+        RecipeModel(id: UUID(), name: "Pizza", cuisine: "Italian", image: .pizza),
+        RecipeModel(id: UUID(), name: "Pizza Again", cuisine: "Italian", image: .pizza)
+    ]
+}
+
+struct RecipeResponse: Identifiable, Codable {
     let id: UUID
     let cuisine: String
     let name: String
@@ -21,7 +36,7 @@ struct RecipeResponse: Identifiable, Decodable {
     }
 }
 
-struct RecipesAPIResponse: Decodable {
+struct RecipesAPIResponse: Codable {
     let recipes: [RecipeResponse]
     
     enum CodingKeys: String, CodingKey {
@@ -32,5 +47,9 @@ struct RecipesAPIResponse: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let values = try container.decode([FailableDecodable<RecipeResponse>].self, forKey: .recipes)
         recipes = values.compactMap(\.base)
+    }
+    
+    init(recipes: [RecipeResponse]) {
+        self.recipes = recipes
     }
 }

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct RecipeListView<Service: RecipeServiceProtocol>: View {
     
-    init(service: Service) {
-        _viewModel = StateObject(wrappedValue: RecipeViewModel(recipeService: service))
+    init(viewModel: RecipeListViewModel<Service>) {
+        self.viewModel = viewModel
     }
     
-    @StateObject private var viewModel: RecipeViewModel<Service>
+    @ObservedObject private var viewModel: RecipeListViewModel<Service>
     
     var body: some View {
         NavigationStack {
@@ -31,21 +31,10 @@ struct RecipeListView<Service: RecipeServiceProtocol>: View {
     private func listView(recipes: [RecipeModel]) -> some View {
         Group {
             if recipes.isEmpty {
-                errorView()
+                ErrorView()
             } else {
                 List(recipes) { recipe in
-                    HStack {
-                        Image(uiImage: recipe.image)
-                            .frame(width: 50, height: 50)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        VStack(alignment: .leading) {
-                            Text(recipe.name)
-                                .font(.headline)
-                            Text(recipe.cuisine)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
+                    ListCellView(recipe: recipe)
                 }
                 .navigationTitle("Recipes")
             }
@@ -54,28 +43,9 @@ struct RecipeListView<Service: RecipeServiceProtocol>: View {
             await viewModel.fetchRecipes()
         }
     }
-    
-    private func errorView() -> some View {
-        VStack {
-            ZStack {
-                Image(systemName: "line.diagonal")
-                    .font(.system(size: 120))
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 90))
-                    .opacity(0.8)
-            }
-            .foregroundStyle(.gray)
-            Text("Your server's on break.")
-                .font(.largeTitle)
-                .bold()
-            Text("He'll be back in a minute. Sorry for the delay.")
-                .font(.body)
-                .foregroundStyle(.gray)
-        }
-        .multilineTextAlignment(.center)
-    }
 }
 
 #Preview {
-    RecipeListView(service: RecipeServiceMock())
+    let viewModel = RecipeListViewModel(recipeService: RecipeServiceMock())
+    RecipeListView(viewModel: viewModel)
 }

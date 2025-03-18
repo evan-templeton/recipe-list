@@ -19,6 +19,7 @@
 /* Begin PBXFileReference section */
 		728C165C2D821F9600216ECE /* RecipeList.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecipeList.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		728C166C2D821F9700216ECE /* RecipeListTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RecipeListTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		72D849492D89A18200FADAE3 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -55,6 +56,7 @@
 		728C16532D821F9600216ECE = {
 			isa = PBXGroup;
 			children = (
+				72D849492D89A18200FADAE3 /* README.md */,
 				728C165E2D821F9600216ECE /* RecipeList */,
 				728C166F2D821F9700216ECE /* RecipeListTests */,
 				728C165D2D821F9600216ECE /* Products */,
