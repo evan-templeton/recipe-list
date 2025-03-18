@@ -30,5 +30,6 @@ _What do you think is the weakest part of your project?_
 
 The following seem like overkill for a project of this size, but I'd consider them to be weak choices:
 - `RecipeListView` doesn't support pagination
+- Images are cached per session, not persistent
 - Views don't support UI Testing
 - App doesn't support localization

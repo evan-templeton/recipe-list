@@ -38,7 +38,7 @@ struct RecipeService: RecipeServiceProtocol {
     }
     
     private func createRecipeModels(response: RecipesAPIResponse) async throws -> [RecipeModel] {
-        try await withThrowingTaskGroup(of: RecipeModel?.self) { group in
+        try await withThrowingTaskGroup(of: RecipeModel.self) { group in
             for recipe in response.recipes {
                 if let cachedImage = cache.object(forKey: recipe.imageUrl as NSURL) {
                     group.addTask {
@@ -52,9 +52,7 @@ struct RecipeService: RecipeServiceProtocol {
             }
             
             return try await group.reduce(into: [RecipeModel]()) { result, recipeModel in
-                if let recipeModel {
-                    result.append(recipeModel)
-                }
+                result.append(recipeModel)
             }
         }
     }
