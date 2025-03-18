@@ -9,11 +9,7 @@ import SwiftUI
 
 struct RecipeListView<Service: RecipeServiceProtocol>: View {
     
-    init(viewModel: RecipeListViewModel<Service>) {
-        self.viewModel = viewModel
-    }
-    
-    @ObservedObject private var viewModel: RecipeListViewModel<Service>
+    @StateObject var viewModel: RecipeListViewModel<Service>
     
     var body: some View {
         NavigationStack {
